@@ -31,7 +31,8 @@ export const ThemeEditor: React.FC = () => {
           {/* Theme Mode */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-3">Theme Mode</label>
-            <div className="flex space-x-4">
+            <div className="space-y-4">
+              <div className="flex space-x-4">
               <button
                 onClick={() => updateTheme({ mode: 'light' })}
                 className={`flex-1 p-4 border-2 rounded-lg text-center transition-colors ${
@@ -54,6 +55,25 @@ export const ThemeEditor: React.FC = () => {
                 <div className="w-8 h-8 bg-gray-800 border border-gray-600 rounded mx-auto mb-2"></div>
                 Dark Mode
               </button>
+            </div>
+              
+              {/* Dark Mode Intensity */}
+              {theme?.mode === 'dark' && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Dark Mode Intensity: {Math.round((theme?.dark_opacity || 0.9) * 100)}%
+                  </label>
+                  <input
+                    type="range"
+                    min="0.3"
+                    max="1"
+                    step="0.1"
+                    value={theme?.dark_opacity || 0.9}
+                    onChange={(e) => updateTheme({ dark_opacity: parseFloat(e.target.value) })}
+                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                  />
+                </div>
+              )}
             </div>
           </div>
 

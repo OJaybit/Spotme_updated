@@ -26,6 +26,7 @@ export interface HeroSection {
   avatar_url?: string;
   cta_text: string;
   cta_url?: string;
+  about_title?: string;
 }
 
 export interface AboutSection {
@@ -52,6 +53,8 @@ export interface Project {
   title: string;
   description: string;
   image_url?: string;
+  video_url?: string;
+  media_type?: 'image' | 'video' | 'both';
   live_url?: string;
   github_url?: string;
   tech_stack: string[];
@@ -72,6 +75,7 @@ export interface SocialLink {
 
 export interface ThemeSettings {
   mode: 'light' | 'dark';
+  dark_opacity: number; // 0.1 to 1.0 for dark mode intensity
   primary_color: string;
   secondary_color: string;
   accent_color: string;

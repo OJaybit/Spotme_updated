@@ -20,12 +20,28 @@ export const PortfolioPreview: React.FC = () => {
 
   const { hero, about, skills, projects, contact, theme } = portfolio;
 
+  // Calculate dark mode background with opacity
+  const darkBgStyle = theme?.mode === 'dark' 
+    ? { backgroundColor: `rgba(17, 24, 39, ${theme.dark_opacity || 0.9})` }
+    : {};
   return (
     <div 
-      className={`flex-1 overflow-y-auto ${theme?.mode === 'dark' ? 'bg-gray-900' : 'bg-white'}`}
+      className={`flex-1 overflow-y-auto ${theme?.mode === 'dark' ? '' : 'bg-white'}`}
+      style={theme?.mode === 'dark' ? darkBgStyle : {}}
       style={{ fontFamily: theme?.font_family }}
     >
       <div className="max-w-4xl mx-auto">
+        {/* Profile Picture in Preview */}
+        {hero?.avatar_url && (
+          <div className="fixed top-4 right-4 z-10">
+            <img
+              src={hero.avatar_url}
+              alt="Profile"
+              className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-lg"
+            />
+          </div>
+        )}
+
         {/* Hero Section */}
         <section className={`py-20 px-6 text-center ${theme?.mode === 'dark' ? 'text-white' : 'text-gray-900'}`}>
           <motion.div
@@ -61,7 +77,7 @@ export const PortfolioPreview: React.FC = () => {
         {about?.bio && (
           <section className={`py-16 px-6 ${theme?.mode === 'dark' ? 'text-white' : 'text-gray-900'}`}>
             <div className="max-w-3xl mx-auto">
-              <h2 className="text-3xl font-bold mb-8">About Me</h2>
+              <h2 className="text-3xl font-bold mb-8">{hero?.about_title || 'About Me'}</h2>
               <div className="grid md:grid-cols-2 gap-8">
                 <div>
                   <p className="text-lg leading-relaxed mb-6 opacity-90">
@@ -121,16 +137,26 @@ export const PortfolioPreview: React.FC = () => {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.1 }}
-                    className={`rounded-xl overflow-hidden shadow-lg ${
-                      theme?.mode === 'dark' ? 'bg-gray-800' : 'bg-white'
-                    }`}
+                    className="rounded-xl overflow-hidden shadow-lg bg-white"
+                    style={theme?.mode === 'dark' ? { backgroundColor: `rgba(31, 41, 55, ${(theme.dark_opacity || 0.9) * 0.8})` } : {}}
                   >
-                    {project.image_url && (
-                      <img
-                        src={project.image_url}
-                        alt={project.title}
-                        className="w-full h-48 object-cover"
-                      />
+                    {(project.image_url || project.video_url) && (
+                      <div className="w-full h-48 overflow-hidden">
+                        {project.media_type === 'video' && project.video_url ? (
+                          <video
+                            src={project.video_url}
+                            className="w-full h-full object-cover"
+                            controls
+                            poster={project.image_url}
+                          />
+                        ) : project.image_url ? (
+                          <img
+                            src={project.image_url}
+                            alt={project.title}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : null}
+                      </div>
                     )}
                     <div className="p-6">
                       <h3 className="font-bold text-xl mb-2">{project.title}</h3>

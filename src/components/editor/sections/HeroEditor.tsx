@@ -3,19 +3,36 @@ import { Upload, X } from 'lucide-react';
 import { Input } from '../../ui/Input';
 import { Button } from '../../ui/Button';
 import { usePortfolioStore } from '../../../store/portfolioStore';
+import { uploadFile, getPublicUrl } from '../../../lib/supabase';
+import toast from 'react-hot-toast';
 
 export const HeroEditor: React.FC = () => {
   const { portfolio, updateHero } = usePortfolioStore();
   const hero = portfolio?.hero;
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        updateHero({ avatar_url: e.target?.result as string });
-      };
-      reader.readAsDataURL(file);
+      try {
+        toast.loading('Uploading image...');
+        
+        // Create unique filename
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Date.now()}.${fileExt}`;
+        const filePath = `avatars/${fileName}`;
+        
+        // Upload to Supabase Storage
+        await uploadFile('portfolios', filePath, file);
+        const publicUrl = getPublicUrl('portfolios', filePath);
+        
+        updateHero({ avatar_url: publicUrl });
+        toast.dismiss();
+        toast.success('Image uploaded successfully!');
+      } catch (error) {
+        toast.dismiss();
+        toast.error('Failed to upload image');
+        console.error('Upload error:', error);
+      }
     }
   };
 
@@ -94,6 +111,17 @@ export const HeroEditor: React.FC = () => {
             value={hero?.cta_url || ''}
             onChange={(e) => updateHero({ cta_url: e.target.value })}
           />
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              About Me Section Title
+            </label>
+            <Input
+              placeholder="About Me"
+              value={hero?.about_title || 'About Me'}
+              onChange={(e) => updateHero({ about_title: e.target.value })}
+            />
+          </div>
         </div>
       </div>
     </div>

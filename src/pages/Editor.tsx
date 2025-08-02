@@ -57,6 +57,7 @@ export const Editor: React.FC = () => {
         },
         theme: {
           mode: 'light' as const,
+          dark_opacity: 0.9,
           primary_color: '#3B82F6',
           secondary_color: '#10B981',
           accent_color: '#F97316',

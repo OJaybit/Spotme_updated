@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { Plus, X, Upload, ExternalLink, Github } from 'lucide-react';
+import { Plus, X, Upload, ExternalLink, Github, Image, Video } from 'lucide-react';
 import { Button } from '../../ui/Button';
 import { Input } from '../../ui/Input';
 import { usePortfolioStore } from '../../../store/portfolioStore';
 import { Project } from '../../../types';
+import { uploadFile, getPublicUrl } from '../../../lib/supabase';
+import toast from 'react-hot-toast';
 
 export const ProjectsEditor: React.FC = () => {
   const { portfolio, updateProjects } = usePortfolioStore();
@@ -17,6 +19,8 @@ export const ProjectsEditor: React.FC = () => {
       title: '',
       description: '',
       image_url: '',
+      video_url: '',
+      media_type: 'image',
       live_url: '',
       github_url: '',
       tech_stack: []
@@ -47,17 +51,42 @@ export const ProjectsEditor: React.FC = () => {
     updateProjects({ projects: updatedProjects });
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleMediaUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'image' | 'video') => {
     const file = e.target.files?.[0];
     if (file && editingProject) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setEditingProject({
-          ...editingProject,
-          image_url: e.target?.result as string
-        });
-      };
-      reader.readAsDataURL(file);
+      try {
+        toast.loading(`Uploading ${type}...`);
+        
+        // Create unique filename
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Date.now()}.${fileExt}`;
+        const filePath = `projects/${fileName}`;
+        
+        // Upload to Supabase Storage
+        await uploadFile('portfolios', filePath, file);
+        const publicUrl = getPublicUrl('portfolios', filePath);
+        
+        if (type === 'image') {
+          setEditingProject({
+            ...editingProject,
+            image_url: publicUrl,
+            media_type: editingProject.video_url ? 'both' : 'image'
+          });
+        } else {
+          setEditingProject({
+            ...editingProject,
+            video_url: publicUrl,
+            media_type: editingProject.image_url ? 'both' : 'video'
+          });
+        }
+        
+        toast.dismiss();
+        toast.success(`${type} uploaded successfully!`);
+      } catch (error) {
+        toast.dismiss();
+        toast.error(`Failed to upload ${type}`);
+        console.error('Upload error:', error);
+      }
     }
   };
 
@@ -115,42 +144,97 @@ export const ProjectsEditor: React.FC = () => {
               />
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Project Image</label>
-              <div className="flex items-center space-x-4">
-                {editingProject?.image_url ? (
-                  <div className="relative">
-                    <img
-                      src={editingProject.image_url}
-                      alt="Project"
-                      className="w-20 h-20 rounded-lg object-cover"
+            <div className="space-y-4">
+              <label className="block text-sm font-medium text-gray-700">Project Media</label>
+              
+              {/* Image Upload */}
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-2">Project Image</label>
+                <div className="flex items-center space-x-4">
+                  {editingProject?.image_url ? (
+                    <div className="relative">
+                      <img
+                        src={editingProject.image_url}
+                        alt="Project"
+                        className="w-20 h-20 rounded-lg object-cover"
+                      />
+                      <button
+                        onClick={() => setEditingProject(prev => prev ? { 
+                          ...prev, 
+                          image_url: '',
+                          media_type: prev.video_url ? 'video' : undefined
+                        } : null)}
+                        className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="w-20 h-20 bg-gray-200 rounded-lg flex items-center justify-center">
+                      <Image className="w-6 h-6 text-gray-400" />
+                    </div>
+                  )}
+                  <div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleMediaUpload(e, 'image')}
+                      className="hidden"
+                      id="project-image-upload"
                     />
-                    <button
-                      onClick={() => setEditingProject(prev => prev ? { ...prev, image_url: '' } : null)}
-                      className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
+                    <label htmlFor="project-image-upload">
+                      <Button variant="outline" size="sm" className="cursor-pointer">
+                        <Image className="w-4 h-4 mr-2" />
+                        Upload Image
+                      </Button>
+                    </label>
                   </div>
-                ) : (
-                  <div className="w-20 h-20 bg-gray-200 rounded-lg flex items-center justify-center">
-                    <Upload className="w-6 h-6 text-gray-400" />
+                </div>
+              </div>
+
+              {/* Video Upload */}
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-2">Project Video (optional)</label>
+                <div className="flex items-center space-x-4">
+                  {editingProject?.video_url ? (
+                    <div className="relative">
+                      <video
+                        src={editingProject.video_url}
+                        className="w-20 h-20 rounded-lg object-cover"
+                        controls={false}
+                        muted
+                      />
+                      <button
+                        onClick={() => setEditingProject(prev => prev ? { 
+                          ...prev, 
+                          video_url: '',
+                          media_type: prev.image_url ? 'image' : undefined
+                        } : null)}
+                        className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="w-20 h-20 bg-gray-200 rounded-lg flex items-center justify-center">
+                      <Video className="w-6 h-6 text-gray-400" />
+                    </div>
+                  )}
+                  <div>
+                    <input
+                      type="file"
+                      accept="video/*"
+                      onChange={(e) => handleMediaUpload(e, 'video')}
+                      className="hidden"
+                      id="project-video-upload"
+                    />
+                    <label htmlFor="project-video-upload">
+                      <Button variant="outline" size="sm" className="cursor-pointer">
+                        <Video className="w-4 h-4 mr-2" />
+                        Upload Video
+                      </Button>
+                    </label>
                   </div>
-                )}
-                <div>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="hidden"
-                    id="project-image-upload"
-                  />
-                  <label htmlFor="project-image-upload">
-                    <Button variant="outline" size="sm" className="cursor-pointer">
-                      <Upload className="w-4 h-4 mr-2" />
-                      Upload Image
-                    </Button>
-                  </label>
                 </div>
               </div>
             </div>
@@ -222,12 +306,23 @@ export const ProjectsEditor: React.FC = () => {
           <div key={project.id} className="bg-white border border-gray-200 rounded-lg p-4">
             <div className="flex items-start justify-between">
               <div className="flex space-x-4 flex-1">
-                {project.image_url && (
-                  <img
-                    src={project.image_url}
-                    alt={project.title}
-                    className="w-16 h-16 rounded-lg object-cover"
-                  />
+                {(project.image_url || project.video_url) && (
+                  <div className="w-16 h-16 rounded-lg overflow-hidden">
+                    {project.media_type === 'video' && project.video_url ? (
+                      <video
+                        src={project.video_url}
+                        className="w-full h-full object-cover"
+                        controls={false}
+                        muted
+                      />
+                    ) : project.image_url ? (
+                      <img
+                        src={project.image_url}
+                        alt={project.title}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : null}
+                  </div>
                 )}
                 <div className="flex-1">
                   <h4 className="font-medium text-gray-900">{project.title}</h4>
