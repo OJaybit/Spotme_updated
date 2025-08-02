@@ -50,6 +50,8 @@ export const PublicPortfolio: React.FC = () => {
                 title: 'Project One',
                 description: 'A web-based analytics platform',
                 image_url: 'https://images.pexels.com/photos/270348/pexels-photo-270348.jpeg?auto=compress&cs=tinysrgb&w=600',
+                video_url: '',
+                media_type: 'image' as const,
                 live_url: 'https://example.com',
                 github_url: 'https://github.com/user/project',
                 tech_stack: ['React', 'Node.js', 'CSS']
@@ -59,6 +61,8 @@ export const PublicPortfolio: React.FC = () => {
                 title: 'Project Two',
                 description: 'An e-commerce website',
                 image_url: 'https://images.pexels.com/photos/196644/pexels-photo-196644.jpeg?auto=compress&cs=tinysrgb&w=600',
+                video_url: '',
+                media_type: 'image' as const,
                 live_url: 'https://example.com',
                 github_url: 'https://github.com/user/project',
                 tech_stack: ['JavaScript', 'HTML', 'CSS']
@@ -68,6 +72,8 @@ export const PublicPortfolio: React.FC = () => {
                 title: 'Project Three',
                 description: 'A task management app',
                 image_url: 'https://images.pexels.com/photos/574071/pexels-photo-574071.jpeg?auto=compress&cs=tinysrgb&w=600',
+                video_url: '',
+                media_type: 'image' as const,
                 live_url: 'https://example.com',
                 github_url: 'https://github.com/user/project',
                 tech_stack: ['Vue.js', 'Firebase']
@@ -86,6 +92,7 @@ export const PublicPortfolio: React.FC = () => {
           },
           theme: {
             mode: 'light',
+            dark_opacity: 0.9,
             primary_color: '#3B82F6',
             secondary_color: '#10B981',
             accent_color: '#F97316',
@@ -134,10 +141,18 @@ export const PublicPortfolio: React.FC = () => {
 
   const { hero, about, skills, projects, contact, theme } = portfolio;
 
+  // Calculate dark mode background with opacity
+  const darkBgStyle = theme.mode === 'dark' 
+    ? { backgroundColor: `rgba(17, 24, 39, ${theme.dark_opacity || 0.9})` }
+    : {};
+
   return (
-    <div 
-      className={`min-h-screen ${theme.mode === 'dark' ? 'bg-gray-900' : 'bg-white'}`}
-      style={{ fontFamily: theme.font_family }}
+    <div
+      className={`min-h-screen ${theme.mode === 'dark' ? '' : 'bg-white'}`}
+      style={{
+        ...(theme.mode === 'dark' ? darkBgStyle : {}),
+        fontFamily: theme.font_family
+      }}
     >
       {/* Navigation */}
       <nav className={`fixed top-0 w-full z-50 backdrop-blur-sm ${
@@ -215,7 +230,7 @@ export const PublicPortfolio: React.FC = () => {
         theme.mode === 'dark' ? 'text-white' : 'text-gray-900'
       }`}>
         <div className="max-w-6xl mx-auto">
-          <h2 className="text-4xl font-bold mb-12 text-center">About Me</h2>
+          <h2 className="text-4xl font-bold mb-12 text-center">{hero.about_title || 'About Me'}</h2>
           <div className="grid lg:grid-cols-2 gap-12 items-start">
             <div>
               <p className="text-lg leading-relaxed mb-6 opacity-90">
@@ -276,16 +291,26 @@ export const PublicPortfolio: React.FC = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.1 }}
-                className={`rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow ${
-                  theme.mode === 'dark' ? 'bg-gray-900' : 'bg-white'
-                }`}
+                className="rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow bg-white"
+                style={theme.mode === 'dark' ? { backgroundColor: `rgba(31, 41, 55, ${(theme.dark_opacity || 0.9) * 0.8})` } : {}}
               >
-                {project.image_url && (
-                  <img
-                    src={project.image_url}
-                    alt={project.title}
-                    className="w-full h-48 object-cover"
-                  />
+                {(project.image_url || project.video_url) && (
+                  <div className="w-full h-48 overflow-hidden">
+                    {project.media_type === 'video' && project.video_url ? (
+                      <video
+                        src={project.video_url}
+                        className="w-full h-full object-cover"
+                        controls
+                        poster={project.image_url}
+                      />
+                    ) : project.image_url ? (
+                      <img
+                        src={project.image_url}
+                        alt={project.title}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : null}
+                  </div>
                 )}
                 <div className="p-6">
                   <h3 className="font-bold text-xl mb-2">{project.title}</h3>
